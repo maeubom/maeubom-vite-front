@@ -37,7 +37,7 @@ const EmotionResultPage = () => {
 
           // 텍스트 to 이미지 API 호출
           const imageResult = await generateImage(mostCommonEmotion);
-          setImageURL(imageResult); // 감정 기반 이미지 생성 결과 (Blob URL 설정)
+          setImageURL(imageResult);
 
           // 명언 API 호출
           const wiseSayingResponse = await createText(mostCommonEmotion);
@@ -53,36 +53,36 @@ const EmotionResultPage = () => {
   }, [location.state]);
 
   return (
-    <div className="flex flex-col items-center justify-start min-h-screen bg-gray-100 p-6">
-      {/* 상단에 정렬된 중앙 이미지 */}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-6">
+      {/* 상단에 정렬된 중앙 아이콘 */}
       <div className="flex justify-center mb-8">
         <img src="/image/emotion.png" alt="Emotion Icon" className="w-24 h-24" />
       </div>
   
       {/* 감정 분석 카드 */}
-      <div className="bg-white shadow-lg rounded-lg p-6 max-w-md w-full text-center">
+      <div className="bg-white shadow-xl rounded-lg p-8 max-w-lg w-full text-center transform transition duration-300 hover:scale-105">
         {/* 감정 분석 결과 */}
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">{analysisResult}</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">{analysisResult}</h1>
 
-        {/* 변환된 텍스트 */}
+        {/* 음성 인식 결과 */}
         {audioResult && (
-          <div className="bg-gray-100 p-4 rounded-lg mb-4 text-gray-700">
-            <h2 className="text-lg font-semibold mb-2">{audioResult}</h2>
-            {/* <p>{audioResult}</p> */}
+          <div className="bg-indigo-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
+            <h2 className="text-lg font-semibold mb-2 text-indigo-800">음성 인식 결과</h2>
+            <p>{audioResult}</p>
           </div>
         )}
 
         {/* 텍스트 감정 분석 결과 */}
         {biSentiResult && (
-          <div className="bg-gray-100 p-4 rounded-lg mb-4 text-gray-700">
-            <h2 className="text-lg font-semibold mb-2">{biSentiResult}</h2>
-            {/* <p>{biSentiResult}</p> */}
+          <div className="bg-purple-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
+            <h2 className="text-lg font-semibold mb-2 text-purple-800">텍스트 감정 분석 결과</h2>
+            <p>{biSentiResult}</p>
           </div>
         )}
 
         {/* 명언 텍스트 */}
         {generatedText && (
-          <p className="text-gray-600 text-lg mb-4">{generatedText}</p>
+          <p className="bg-pink-50 p-4 rounded-lg mb-6 text-pink-700 shadow-sm text-lg font-medium">{generatedText}</p>
         )}
         
         {/* 생성된 이미지 */}
@@ -90,13 +90,13 @@ const EmotionResultPage = () => {
           <img 
             src={imageURL} 
             alt="Generated Result" 
-            className="w-full h-40 object-cover rounded-lg mb-4" 
+            className="w-full h-64 object-contain rounded-lg mb-6 shadow-lg border border-gray-200"
           />
         )}
 
         <button 
           onClick={() => window.history.back()} 
-          className="mt-4 px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors duration-200"
+          className="mt-6 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors duration-200 shadow-md"
         >
           돌아가기
         </button>
