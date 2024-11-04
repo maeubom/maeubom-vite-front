@@ -10,9 +10,9 @@ const EmotionResultPage = () => {
   const [recordedAudio, setRecordedAudio] = useState(null);
   const [recordedVideo, setRecordedVideo] = useState(null);
 
-  const [analysisResult, setAnalysisResult] = useState('분석 중...');
-  const [audioResult, setAudioResult] = useState('음성 인식 중...');
-  const [biSentiResult, setBiSentiResult] = useState('텍스트 감정 분석 중...');
+  const [analysisResult, setAnalysisResult] = useState('감정 분석 중...');
+  const [audioResult, setAudioResult] = useState('음성 분석 중...');
+  const [biSentiResult, setBiSentiResult] = useState(null);
   const [generatedText, setGeneratedText] = useState('명언 생성 중...');
   const [imageURL, setImageURL] = useState(null);
 
@@ -58,7 +58,12 @@ const EmotionResultPage = () => {
   // 분석 결과를 이미지로 다운로드하는 함수
   const handleDownloadAsImage = () => {
     if (resultRef.current) {
-      html2canvas(resultRef.current).then((canvas) => {
+      html2canvas(resultRef.current, {
+        width: 500,
+        height: 800,
+        scale: 1,
+        useCORS: true,
+      }).then((canvas) => {
         const link = document.createElement('a');
         link.href = canvas.toDataURL('image/png');
         link.download = 'emotion_analysis_result.png';
@@ -72,7 +77,7 @@ const EmotionResultPage = () => {
       <div className="flex justify-center mb-8">
         <img src="/image/emotion.png" alt="Emotion Icon" className="w-24 h-24" />
       </div>
-  
+
       <div
         ref={resultRef} // 이 부분을 캡처합니다
         className="bg-white shadow-xl rounded-lg p-8 max-w-lg w-full text-center transform transition duration-300 hover:scale-105"
@@ -86,17 +91,31 @@ const EmotionResultPage = () => {
           </div>
         )}
 
-        {biSentiResult && (
-          <div className="bg-purple-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
-            <h2 className="text-lg font-semibold mb-2 text-purple-800">텍스트 감정 분석 결과</h2>
-            <p>{biSentiResult}</p>
-          </div>
-        )}
+
+        <div className="bg-purple-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
+          <h2 className="text-lg font-semibold mb-2 text-purple-800">텍스트 감정 분석 결과</h2>
+          {biSentiResult == null ? (
+            <p>분석 중...</p>
+          ) : (
+            <>
+              <div class="w-full bg-red-600 rounded-full h-2.5 dark:bg-red-700">
+                <div class="bg-blue-600 h-2.5 rounded-full" style={{ width: `${biSentiResult * 100}%` }}></div>
+              </div>
+              <div class="flex justify-between mb-1">
+                <span class="text-base font-medium text-blue-700 dark:text-blue">Positive</span>
+                <span class="text-base font-medium text-red-700 dark:text-red">Negative</span>
+              </div>
+
+              <p>{(biSentiResult * 100).toFixed(2)}%</p>
+            </>
+          )}
+        </div>
+
 
         {generatedText && (
           <p className="bg-pink-50 p-4 rounded-lg mb-6 text-pink-700 shadow-sm text-lg font-medium">{generatedText}</p>
         )}
-        
+
         {/* 이미지 생성 중 로딩 표시 */}
         {isLoadingImage ? (
           <div className="flex justify-center items-center mb-6">
@@ -104,26 +123,26 @@ const EmotionResultPage = () => {
           </div>
         ) : (
           imageURL && (
-            <img 
-              src={imageURL} 
-              alt="Generated Result" 
+            <img
+              src={imageURL}
+              alt="Generated Result"
               className="w-full h-64 object-contain rounded-lg mb-6 shadow-lg border border-gray-200"
             />
           )
         )}
 
         <div className="flex justify-center space-x-8 mt-6">
-          <button 
-            onClick={() => window.history.back()} 
+          <button
+            onClick={() => window.history.back()}
             className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors duration-200 shadow-md"
           >
             돌아가기
           </button>
-          <button 
-            onClick={handleDownloadAsImage} 
+          <button
+            onClick={handleDownloadAsImage}
             className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-md"
           >
-            다운받기
+            다운로드
           </button>
         </div>
       </div>
