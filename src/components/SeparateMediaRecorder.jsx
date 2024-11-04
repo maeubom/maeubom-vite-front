@@ -1,6 +1,5 @@
 import { React, useState, useRef, useEffect } from 'react';
 import { Video, Mic, Camera, StopCircle, Download, Smile } from 'lucide-react';
-import { analyzeVideoEmotion } from '../API';
 import { useNavigate } from "react-router-dom";
 
 const SeparateMediaRecorder = () => {
@@ -32,7 +31,7 @@ const SeparateMediaRecorder = () => {
 
       const videoStream = new MediaStream([stream.getVideoTracks()[0]]);
       const audioStream = new MediaStream([stream.getAudioTracks()[0]]);
-          
+
       videoRecorderRef.current = new MediaRecorder(videoStream, {
         mimeType: 'video/webm;codecs=vp9'
       });
@@ -70,7 +69,7 @@ const SeparateMediaRecorder = () => {
   const startRecording = () => {
     videoChunksRef.current = [];
     audioChunksRef.current = [];
-    
+
     videoRecorderRef.current?.start();
     audioRecorderRef.current?.start();
     setIsRecording(true);
@@ -104,29 +103,15 @@ const SeparateMediaRecorder = () => {
     }
   };
 
-  const analyzeEmotion = async () => {
-    if (recordedAudio) {
-      try {
-        const formData = new FormData();
-        formData.append("file", recordedAudio, "recorded-audio.webm");
-  
-        // 따로 빼놓은 analyzeVideoEmotion 함수를 사용해 감정 분석 요청을 보냅니다.
-        const response = await analyzeVideoEmotion(recordedVideo);
-        console.log(response)
-        console.log(response.most_common_emotion)
-  
-        if (response && response.most_common_emotion) {
-          setAnalysisResult(response.most_common_emotion); // 서버에서 감정 분석 결과를 가져옴
-  
-          // 감정 분석 결과 페이지로 이동
-          navigate("/emotionResult", { state: { analysisResult: response.most_common_emotion }})
-        } else {
-          console.error("Error: No analysis result returned");
-        }
-      } catch (error) {
-        console.error("Error analyzing emotion:", error);
+  const handleAnalyze = async () => {
+    setAnalysisResult(true); // 감정 분석 결과 버튼 활성화
+    // 감정 분석 결과 페이지로 이동
+    navigate("/emotionResult", {
+      state: {
+        recordedAudio: recordedAudio,
+        recordedVideo: recordedVideo,
       }
-    }
+    });
   };
 
   useEffect(() => {
@@ -149,7 +134,7 @@ const SeparateMediaRecorder = () => {
           className="w-full h-full"
         />
       </div>
-      
+
       <div className="flex gap-4">
         {!isRecording ? (
           <button
@@ -168,7 +153,7 @@ const SeparateMediaRecorder = () => {
             녹화 중지
           </button>
         )}
-        
+
         {recordedVideo && (
           <button
             onClick={downloadVideo}
@@ -178,7 +163,7 @@ const SeparateMediaRecorder = () => {
             비디오 다운로드
           </button>
         )}
-        
+
         {recordedAudio && (
           <button
             onClick={downloadAudio}
@@ -191,7 +176,7 @@ const SeparateMediaRecorder = () => {
 
         {recordedAudio && (
           <button
-            onClick={analyzeEmotion}
+            onClick={handleAnalyze}
             className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
           >
             <Smile className="w-5 h-5" />

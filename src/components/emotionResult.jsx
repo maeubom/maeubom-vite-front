@@ -1,128 +1,134 @@
-import React, { useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Music, ImageIcon, Video, MessageSquare } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import { analyzeVideoEmotion, transcribeAudio, createText, generateImage, getBiSentiment } from '../API';
+import html2canvas from 'html2canvas';
+import loadingImage from '../assets/loading.svg'; // 로딩 이미지를 import
 
-const MediaResults = ({ videoResults, textResults, audioUrl, imageUrl }) => {
-  const audioRef = useRef(null);
+const EmotionResultPage = () => {
+  const location = useLocation();
+  const resultRef = useRef(null); // 캡처할 컴포넌트를 참조하기 위한 Ref
+  const [recordedAudio, setRecordedAudio] = useState(null);
+  const [recordedVideo, setRecordedVideo] = useState(null);
 
-  // 비디오 감정 분석 결과를 위한 이모지 매핑
-  const emotionEmoji = {
-    '화남': '😠',
-    '역겨움': '🤢',
-    '두려움': '😨',
-    '기쁨': '😊',
-    '슬픔': '😢',
-    '놀람': '😲',
-    '아무생각없음': '😐'
+  const [analysisResult, setAnalysisResult] = useState('분석 중...');
+  const [audioResult, setAudioResult] = useState('음성 인식 중...');
+  const [biSentiResult, setBiSentiResult] = useState('텍스트 감정 분석 중...');
+  const [generatedText, setGeneratedText] = useState('명언 생성 중...');
+  const [imageURL, setImageURL] = useState(null);
+
+  const [isLoadingImage, setIsLoadingImage] = useState(false); // 이미지 생성 로딩 상태 추가
+
+  useEffect(() => {
+    if (location.state) {
+      const { recordedAudio, recordedVideo } = location.state;
+      setRecordedAudio(recordedAudio);
+      setRecordedVideo(recordedVideo);
+
+      const fetchData = async () => {
+        try {
+          const videoResult = await analyzeVideoEmotion(recordedVideo);
+          const mostCommonEmotion = videoResult?.most_common_emotion || '감정 분석 결과가 없습니다.';
+          setAnalysisResult(mostCommonEmotion);
+
+          const audioResponse = await transcribeAudio(recordedAudio);
+          const audioToText = audioResponse?.text || '음성 인식 결과가 없습니다.';
+          setAudioResult(audioToText);
+
+          const textSentiResult = await getBiSentiment(audioToText);
+          setBiSentiResult(textSentiResult?.score || '텍스트 감정 분석 결과가 없습니다.');
+
+          setIsLoadingImage(true); // 이미지 생성 시작 시 로딩 상태 true로 설정
+          const imageResult = await generateImage(mostCommonEmotion);
+          setImageURL(imageResult);
+          setIsLoadingImage(false); // 이미지 생성 완료 후 로딩 상태 false로 설정
+
+          const wiseSayingResponse = await createText(mostCommonEmotion);
+          setGeneratedText(wiseSayingResponse?.quote || '명언 생성에 실패했습니다.');
+
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          setIsLoadingImage(false); // 에러 발생 시에도 로딩 상태를 false로 설정
+        }
+      };
+
+      fetchData();
+    }
+  }, [location.state]);
+
+  // 분석 결과를 이미지로 다운로드하는 함수
+  const handleDownloadAsImage = () => {
+    if (resultRef.current) {
+      html2canvas(resultRef.current).then((canvas) => {
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = 'emotion_analysis_result.png';
+        link.click();
+      });
+    }
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {/* 텍스트 감정 분석 결과 */}
-      {textResults && (
-        <Card className="col-span-2">
-          <CardHeader className="flex flex-row items-center space-x-2">
-            <MessageSquare className="w-6 h-6" />
-            <CardTitle>텍스트 감정 분석</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span>감정 점수</span>
-                <span className="text-xl">
-                  {textResults.score >= 0.5 ? '😊' : '😢'} {(textResults.score * 100).toFixed(1)}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
-                  style={{ width: `${textResults.score * 100}%` }}
-                />
-              </div>
-              <div className="text-sm text-gray-500">
-                * 0%에 가까울수록 부정적, 100%에 가까울수록 긍정적
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-6">
+      <div className="flex justify-center mb-8">
+        <img src="/image/emotion.png" alt="Emotion Icon" className="w-24 h-24" />
+      </div>
+  
+      <div
+        ref={resultRef} // 이 부분을 캡처합니다
+        className="bg-white shadow-xl rounded-lg p-8 max-w-lg w-full text-center transform transition duration-300 hover:scale-105"
+      >
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">{analysisResult}</h1>
 
-      {/* 비디오 감정 분석 결과 */}
-      {videoResults && (
-        <Card>
-          <CardHeader className="flex flex-row items-center space-x-2">
-            <Video className="w-6 h-6" />
-            <CardTitle>비디오 감정 분석</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span>주요 감정</span>
-                <span className="text-xl">
-                  {emotionEmoji[videoResults.most_common_emotion]} {videoResults.most_common_emotion}
-                </span>
-              </div>
-              <div>
-                <h4 className="mb-2 font-medium">감정 분포</h4>
-                <div className="space-y-2">
-                  {Object.entries(
-                    videoResults.emotions.reduce((acc, emotion) => {
-                      acc[emotion] = (acc[emotion] || 0) + 1;
-                      return acc;
-                    }, {})
-                  ).map(([emotion, count]) => (
-                    <div key={emotion} className="flex items-center justify-between">
-                      <span>{emotion} {emotionEmoji[emotion]}</span>
-                      <span>{((count / videoResults.emotions.length) * 100).toFixed(1)}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        {audioResult && (
+          <div className="bg-indigo-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
+            <h2 className="text-lg font-semibold mb-2 text-indigo-800">음성 인식 결과</h2>
+            <p>{audioResult}</p>
+          </div>
+        )}
 
-      {/* 생성된 이미지 */}
-      {imageUrl && (
-        <Card>
-          <CardHeader className="flex flex-row items-center space-x-2">
-            <ImageIcon className="w-6 h-6" />
-            <CardTitle>생성된 이미지</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="relative aspect-square rounded-lg overflow-hidden">
-              <img 
-                src={imageUrl} 
-                alt="Generated Image" 
-                className="object-cover w-full h-full"
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        {biSentiResult && (
+          <div className="bg-purple-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
+            <h2 className="text-lg font-semibold mb-2 text-purple-800">텍스트 감정 분석 결과</h2>
+            <p>{biSentiResult}</p>
+          </div>
+        )}
 
-      {/* 생성된 음악 */}
-      {audioUrl && (
-        <Card>
-          <CardHeader className="flex flex-row items-center space-x-2">
-            <Music className="w-6 h-6" />
-            <CardTitle>생성된 음악</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <audio 
-              ref={audioRef} 
-              controls 
-              className="w-full"
-              src={audioUrl}
-            >
-              Your browser does not support the audio element.
-            </audio>
-          </CardContent>
-        </Card>
-      )}
+        {generatedText && (
+          <p className="bg-pink-50 p-4 rounded-lg mb-6 text-pink-700 shadow-sm text-lg font-medium">{generatedText}</p>
+        )}
+        
+        {/* 이미지 생성 중 로딩 표시 */}
+        {isLoadingImage ? (
+          <div className="flex justify-center items-center mb-6">
+            <img src={loadingImage} alt="Loading" className="w-24 h-24" />
+          </div>
+        ) : (
+          imageURL && (
+            <img 
+              src={imageURL} 
+              alt="Generated Result" 
+              className="w-full h-64 object-contain rounded-lg mb-6 shadow-lg border border-gray-200"
+            />
+          )
+        )}
+
+        <div className="flex justify-center space-x-8 mt-6">
+          <button 
+            onClick={() => window.history.back()} 
+            className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors duration-200 shadow-md"
+          >
+            돌아가기
+          </button>
+          <button 
+            onClick={handleDownloadAsImage} 
+            className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-md"
+          >
+            다운받기
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default MediaResults;
+export default EmotionResultPage;
