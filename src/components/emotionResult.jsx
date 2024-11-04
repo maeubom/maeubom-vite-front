@@ -112,19 +112,13 @@ const EmotionResultPage = () => {
         </div>
 
 
-        {generatedText === '명언 생성 중...' ? (
-          <div className="bg-pink-50 p-4 rounded-lg mb-6 text-pink-700 shadow-sm text-lg font-medium">
-            <h2 className="text-lg font-semibold mb-2 text-indigo-800">명언 추천</h2>
-            <p className="text-center text-gray-600">명언 생성 중...</p>
-          </div>
-        ) : (
-          generatedText && (
-            <div className="bg-pink-50 p-4 rounded-lg mb-6 text-pink-700 shadow-sm text-lg font-medium">
-              <h2 className="text-lg font-semibold mb-2 text-indigo-800">명언 추천</h2>
-              <p className="italic text-center mb-2">"{generatedText.quote}"</p>
-              <p className="text-right">- {generatedText.author}</p>
-            </div>
-          )
+        {generatedText && (
+          <p
+          className="bg-pink-50 p-4 rounded-lg mb-6 text-pink-700 shadow-sm text-lg font-medium"
+          dangerouslySetInnerHTML={{
+            __html: generatedText.replace(/\s*-\s*/g, '<br/>- ')
+          }}
+        ></p>
         )}
 
         {/* 이미지 생성 중 로딩 표시 */}
