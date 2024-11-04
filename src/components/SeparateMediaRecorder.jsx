@@ -184,14 +184,6 @@ const SeparateMediaRecorder = () => {
           </button>
         )}
       </div>
-
-      {/* 감정 분석 결과 출력 */}
-      {analysisResult && (
-        <div className="mt-4 p-4 bg-gray-100 rounded-lg text-center">
-          <h3 className="text-lg font-semibold">감정 분석 결과:</h3>
-          <p>{analysisResult}</p>
-        </div>
-      )}
     </div>
   );
 };
