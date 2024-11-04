@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { analyzeVideoEmotion, transcribeAudio, createText, generateImage, getBiSentiment } from '../API';
 import html2canvas from 'html2canvas';
+import loadingImage from '../assets/loading.svg'; // 로딩 이미지를 import
 
 const EmotionResultPage = () => {
   const location = useLocation();
@@ -14,6 +15,8 @@ const EmotionResultPage = () => {
   const [biSentiResult, setBiSentiResult] = useState('텍스트 감정 분석 중...');
   const [generatedText, setGeneratedText] = useState('명언 생성 중...');
   const [imageURL, setImageURL] = useState(null);
+
+  const [isLoadingImage, setIsLoadingImage] = useState(false); // 이미지 생성 로딩 상태 추가
 
   useEffect(() => {
     if (location.state) {
@@ -34,14 +37,17 @@ const EmotionResultPage = () => {
           const textSentiResult = await getBiSentiment(audioToText);
           setBiSentiResult(textSentiResult?.score || '텍스트 감정 분석 결과가 없습니다.');
 
+          setIsLoadingImage(true); // 이미지 생성 시작 시 로딩 상태 true로 설정
           const imageResult = await generateImage(mostCommonEmotion);
           setImageURL(imageResult);
+          setIsLoadingImage(false); // 이미지 생성 완료 후 로딩 상태 false로 설정
 
           const wiseSayingResponse = await createText(mostCommonEmotion);
           setGeneratedText(wiseSayingResponse?.quote || '명언 생성에 실패했습니다.');
 
         } catch (error) {
           console.error('Error fetching data:', error);
+          setIsLoadingImage(false); // 에러 발생 시에도 로딩 상태를 false로 설정
         }
       };
 
@@ -91,12 +97,19 @@ const EmotionResultPage = () => {
           <p className="bg-pink-50 p-4 rounded-lg mb-6 text-pink-700 shadow-sm text-lg font-medium">{generatedText}</p>
         )}
         
-        {imageURL && (
-          <img 
-            src={imageURL} 
-            alt="Generated Result" 
-            className="w-full h-64 object-contain rounded-lg mb-6 shadow-lg border border-gray-200"
-          />
+        {/* 이미지 생성 중 로딩 표시 */}
+        {isLoadingImage ? (
+          <div className="flex justify-center items-center mb-6">
+            <img src={loadingImage} alt="Loading" className="w-24 h-24" />
+          </div>
+        ) : (
+          imageURL && (
+            <img 
+              src={imageURL} 
+              alt="Generated Result" 
+              className="w-full h-64 object-contain rounded-lg mb-6 shadow-lg border border-gray-200"
+            />
+          )
         )}
 
         <div className="flex justify-center space-x-8 mt-6">
