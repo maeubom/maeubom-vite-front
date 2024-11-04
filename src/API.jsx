@@ -119,8 +119,10 @@ export const createMusicBinary = async (summaryText, length = 512) => {
   formData.append("length", length);
 
   try {
-    const response = await api.post("/text-to-music", formData);
-    return response.data;  // { file_name, file_id }
+    const response = await api.post("/text-to-music", formData, {
+      responseType: 'blob',
+    });
+    return response.data;  // blob으로 반환
   } catch (error) {
     console.error("Error creating music:", error);
     return null;

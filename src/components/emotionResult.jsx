@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { analyzeVideoEmotion, transcribeAudio, createText, generateImage, getBiSentiment } from '../API';
+import { analyzeVideoEmotion, transcribeAudio, createText, generateImage, getBiSentiment, createMusicBinary } from '../API';
 import html2canvas from 'html2canvas';
 import loadingImage from '../assets/loading.svg'; // 로딩 이미지를 import
+import musicLoadingImage from '../assets/loading2.svg'; // 음악 로딩 이미지 import
+import translate from 'translate';
 
 const EmotionResultPage = () => {
   const location = useLocation();
@@ -15,8 +17,26 @@ const EmotionResultPage = () => {
   const [biSentiResult, setBiSentiResult] = useState(null);
   const [generatedText, setGeneratedText] = useState('명언 생성 중...');
   const [imageURL, setImageURL] = useState(null);
+  const [musicURL, setMusicURL] = useState(null);
 
   const [isLoadingImage, setIsLoadingImage] = useState(false); // 이미지 생성 로딩 상태 추가
+  const [isMusicLoadingImage, setIsMusicLoadingImage] = useState(false); // 음악 생성 로딩 상태 추가
+
+  // 번역 함수
+  const translateText = async (text) => {
+    try {
+      translate.engine = 'google'; // 번역 엔진 설정
+      translate.from = 'ko';
+      translate.to = 'en';
+      
+      const result = await translate(text);
+      return result
+    } catch (error) {
+      console.error('Translation error:', error);
+      return 'Translation failed';
+    }
+  };
+
 
   useEffect(() => {
     if (location.state) {
@@ -33,6 +53,9 @@ const EmotionResultPage = () => {
           const audioResponse = await transcribeAudio(recordedAudio);
           const audioToText = audioResponse?.text || '음성 인식 결과가 없습니다.';
           setAudioResult(audioToText);
+          const translatedText = await translateText(audioToText); // ko - en 번역 중
+          console.log(translatedText);
+
 
           const textSentiResult = await getBiSentiment(audioToText);
           setBiSentiResult(textSentiResult?.score || '텍스트 감정 분석 결과가 없습니다.');
@@ -42,12 +65,19 @@ const EmotionResultPage = () => {
           setImageURL(imageResult);
           setIsLoadingImage(false); // 이미지 생성 완료 후 로딩 상태 false로 설정
 
-          const wiseSayingResponse = await createText(mostCommonEmotion);
+          const wiseSayingResponse = await createText(mostCommonEmotion + ", " + translatedText);
           setGeneratedText(wiseSayingResponse?.quote || '명언 생성에 실패했습니다.');
+
+          setIsMusicLoadingImage(true); // 음악 생성 시작 시 로딩 상태 true로 설정
+          const musicResult = await createMusicBinary(mostCommonEmotion + ", " + translatedText);
+          const url = URL.createObjectURL(musicResult);
+          setMusicURL(url);
+          setIsMusicLoadingImage(false); // 음악 생성 완료 후 로딩 상태 flase로 설정
 
         } catch (error) {
           console.error('Error fetching data:', error);
           setIsLoadingImage(false); // 에러 발생 시에도 로딩 상태를 false로 설정
+          setIsMusicLoadingImage(false); // 음악 생성 로딩 역시 false로 설정
         }
       };
 
@@ -98,12 +128,12 @@ const EmotionResultPage = () => {
             <p>분석 중...</p>
           ) : (
             <>
-              <div class="w-full bg-red-600 rounded-full h-2.5 dark:bg-red-700">
-                <div class="bg-blue-600 h-2.5 rounded-full" style={{ width: `${biSentiResult * 100}%` }}></div>
+              <div className="w-full bg-red-600 rounded-full h-2.5 dark:bg-red-700">
+                <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${biSentiResult * 100}%` }}></div>
               </div>
-              <div class="flex justify-between mb-1">
-                <span class="text-base font-medium text-blue-700 dark:text-blue">Positive</span>
-                <span class="text-base font-medium text-red-700 dark:text-red">Negative</span>
+              <div className="flex justify-between mb-1">
+                <span className="text-base font-medium text-blue-700 dark:text-blue">Positive</span>
+                <span className="text-base font-medium text-red-700 dark:text-red">Negative</span>
               </div>
 
               <p>{(biSentiResult * 100).toFixed(2)}%</p>
@@ -128,6 +158,20 @@ const EmotionResultPage = () => {
               alt="Generated Result"
               className="w-full h-64 object-contain rounded-lg mb-6 shadow-lg border border-gray-200"
             />
+          )
+        )}
+
+        {/* 음악 생성 중 로딩 표시 */}
+        {isMusicLoadingImage ? (
+          <div className="flex justify-center items-center mb-6">
+            <img src={musicLoadingImage} alt="Loading" className="w-24 h-24" />
+          </div>
+        ) : (
+          musicURL && (
+            <audio controls>
+              <source src={musicURL} type="audio/wav" />
+              Your browser does not support the audio
+            </audio>
           )
         )}
 
