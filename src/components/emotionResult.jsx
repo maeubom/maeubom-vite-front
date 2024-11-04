@@ -62,7 +62,7 @@ const EmotionResultPage = () => {
           setBiSentiResult(textSentiResult?.score || '텍스트 감정 분석 결과가 없습니다.');
 
           setIsLoadingImage(true); // 이미지 생성 시작 시 로딩 상태 true로 설정
-          const imageResult = await generateImage(mostCommonEmotion);
+          const imageResult = await generateImage(mostCommonEmotion + ", " + translatedText);
           setImageURL(imageResult);
           setIsLoadingImage(false); // 이미지 생성 완료 후 로딩 상태 false로 설정
 
