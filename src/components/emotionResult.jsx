@@ -5,6 +5,7 @@ import html2canvas from 'html2canvas';
 import loadingImage from '../assets/loading.svg'; // 로딩 이미지를 import
 import musicLoadingImage from '../assets/loading2.svg'; // 음악 로딩 이미지 import
 import translate from 'translate';
+import React from 'react';
 
 const EmotionResultPage = () => {
   const location = useLocation();
@@ -28,7 +29,7 @@ const EmotionResultPage = () => {
       translate.engine = 'google'; // 번역 엔진 설정
       translate.from = 'ko';
       translate.to = 'en';
-      
+
       const result = await translate(text);
       return result
     } catch (error) {
@@ -112,11 +113,11 @@ const EmotionResultPage = () => {
         ref={resultRef} // 이 부분을 캡처합니다
         className="bg-white shadow-xl rounded-lg p-8 max-w-lg w-full text-center transform transition duration-300 hover:scale-105"
       >
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">{analysisResult}</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">[{analysisResult}]</h1>
 
         {audioResult && (
           <div className="bg-indigo-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
-            <h2 className="text-lg font-semibold mb-2 text-indigo-800">음성 인식 결과</h2>
+            <h2 className="text-lg font-semibold mb-2 text-indigo-800">음성 인식</h2>
             <p>{audioResult}</p>
           </div>
         )}
@@ -143,8 +144,19 @@ const EmotionResultPage = () => {
 
 
         {generatedText && (
-          <p className="bg-pink-50 p-4 rounded-lg mb-6 text-pink-700 shadow-sm text-lg font-medium">{generatedText}</p>
+          <div className="bg-pink-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
+            <h2 className="text-lg font-semibold mb-2 text-pink-800">추천 명언</h2>
+            {generatedText.includes('-') ? (
+              <>
+                <p className="text-base font-medium mb-2">{generatedText.split('-')[0].trim()}</p>
+                <p className="text-base font-semibold text-gray-700">- {generatedText.split('-')[1].trim()}</p>
+              </>
+            ) : (
+              <p className="text-base font-medium">{generatedText}</p>
+            )}
+          </div>
         )}
+
 
         {/* 이미지 생성 중 로딩 표시 */}
         {isLoadingImage ? (
