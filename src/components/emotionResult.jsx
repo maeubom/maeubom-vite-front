@@ -12,7 +12,7 @@ const EmotionResultPage = () => {
 
   const [analysisResult, setAnalysisResult] = useState('분석 중...');
   const [audioResult, setAudioResult] = useState('음성 인식 중...');
-  const [biSentiResult, setBiSentiResult] = useState('텍스트 감정 분석 중...');
+  const [biSentiResult, setBiSentiResult] = useState(null);
   const [generatedText, setGeneratedText] = useState('명언 생성 중...');
   const [imageURL, setImageURL] = useState(null);
 
@@ -72,7 +72,7 @@ const EmotionResultPage = () => {
       <div className="flex justify-center mb-8">
         <img src="/image/emotion.png" alt="Emotion Icon" className="w-24 h-24" />
       </div>
-  
+
       <div
         ref={resultRef} // 이 부분을 캡처합니다
         className="bg-white shadow-xl rounded-lg p-8 max-w-lg w-full text-center transform transition duration-300 hover:scale-105"
@@ -81,22 +81,49 @@ const EmotionResultPage = () => {
 
         {audioResult && (
           <div className="bg-indigo-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
-            <h2 className="text-lg font-semibold mb-2 text-indigo-800">음성 인식 결과</h2>
+            <h2 className="text-lg font-semibold mb-2 text-indigo-800">음성 인식</h2>
             <p>{audioResult}</p>
           </div>
         )}
 
-        {biSentiResult && (
+        {biSentiResult === '텍스트 감정 분석 중...' ? (
           <div className="bg-purple-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
             <h2 className="text-lg font-semibold mb-2 text-purple-800">텍스트 감정 분석 결과</h2>
-            <p>{biSentiResult}</p>
+            <p className="text-center text-gray-600">감정 분석 중...</p>
           </div>
+        ) : (
+          biSentiResult && (
+            <div className="bg-purple-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
+              <h2 className="text-lg font-semibold mb-2 text-purple-800">텍스트 감정 분석 결과</h2>
+              <div className="flex items-center justify-between w-full mb-2">
+                <span className="text-sm text-purple-800">긍정</span>
+                <span className="text-sm text-purple-800">부정</span>
+              </div>
+              <div className="w-full bg-gray-300 rounded-full h-6">
+                <div
+                  className="bg-purple-600 h-6 rounded-full"
+                  style={{ width: `${Math.min(Math.max(biSentiResult * 100, 0), 100)}%` }}
+                ></div>
+              </div>
+            </div>
+          )
         )}
 
-        {generatedText && (
-          <p className="bg-pink-50 p-4 rounded-lg mb-6 text-pink-700 shadow-sm text-lg font-medium">{generatedText}</p>
+        {generatedText === '명언 생성 중...' ? (
+          <div className="bg-pink-50 p-4 rounded-lg mb-6 text-pink-700 shadow-sm text-lg font-medium">
+            <h2 className="text-lg font-semibold mb-2 text-indigo-800">명언 추천</h2>
+            <p className="text-center text-gray-600">명언 생성 중...</p>
+          </div>
+        ) : (
+          generatedText && (
+            <div className="bg-pink-50 p-4 rounded-lg mb-6 text-pink-700 shadow-sm text-lg font-medium">
+              <h2 className="text-lg font-semibold mb-2 text-indigo-800">명언 추천</h2>
+              <p className="italic text-center mb-2">"{generatedText.quote}"</p>
+              <p className="text-right">- {generatedText.author}</p>
+            </div>
+          )
         )}
-        
+
         {/* 이미지 생성 중 로딩 표시 */}
         {isLoadingImage ? (
           <div className="flex justify-center items-center mb-6">
@@ -104,23 +131,23 @@ const EmotionResultPage = () => {
           </div>
         ) : (
           imageURL && (
-            <img 
-              src={imageURL} 
-              alt="Generated Result" 
+            <img
+              src={imageURL}
+              alt="Generated Result"
               className="w-full h-64 object-contain rounded-lg mb-6 shadow-lg border border-gray-200"
             />
           )
         )}
 
         <div className="flex justify-center space-x-8 mt-6">
-          <button 
-            onClick={() => window.history.back()} 
+          <button
+            onClick={() => window.history.back()}
             className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors duration-200 shadow-md"
           >
             돌아가기
           </button>
-          <button 
-            onClick={handleDownloadAsImage} 
+          <button
+            onClick={handleDownloadAsImage}
             className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-md"
           >
             다운받기
