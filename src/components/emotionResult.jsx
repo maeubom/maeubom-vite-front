@@ -10,8 +10,8 @@ const EmotionResultPage = () => {
   const [recordedAudio, setRecordedAudio] = useState(null);
   const [recordedVideo, setRecordedVideo] = useState(null);
 
-  const [analysisResult, setAnalysisResult] = useState('분석 중...');
-  const [audioResult, setAudioResult] = useState('음성 인식 중...');
+  const [analysisResult, setAnalysisResult] = useState('감정 분석 중...');
+  const [audioResult, setAudioResult] = useState('음성 분석 중...');
   const [biSentiResult, setBiSentiResult] = useState(null);
   const [generatedText, setGeneratedText] = useState('명언 생성 중...');
   const [imageURL, setImageURL] = useState(null);
@@ -58,7 +58,12 @@ const EmotionResultPage = () => {
   // 분석 결과를 이미지로 다운로드하는 함수
   const handleDownloadAsImage = () => {
     if (resultRef.current) {
-      html2canvas(resultRef.current).then((canvas) => {
+      html2canvas(resultRef.current, {
+        width: 500,
+        height: 800,
+        scale: 1,
+        useCORS: true,
+      }).then((canvas) => {
         const link = document.createElement('a');
         link.href = canvas.toDataURL('image/png');
         link.download = 'emotion_analysis_result.png';
@@ -86,28 +91,26 @@ const EmotionResultPage = () => {
           </div>
         )}
 
-        {biSentiResult === '텍스트 감정 분석 중...' ? (
-          <div className="bg-purple-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
-            <h2 className="text-lg font-semibold mb-2 text-purple-800">텍스트 감정 분석 결과</h2>
-            <p className="text-center text-gray-600">감정 분석 중...</p>
-          </div>
-        ) : (
-          biSentiResult && (
-            <div className="bg-purple-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
-              <h2 className="text-lg font-semibold mb-2 text-purple-800">텍스트 감정 분석 결과</h2>
-              <div className="flex items-center justify-between w-full mb-2">
-                <span className="text-sm text-purple-800">긍정</span>
-                <span className="text-sm text-purple-800">부정</span>
+
+        <div className="bg-purple-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
+          <h2 className="text-lg font-semibold mb-2 text-purple-800">텍스트 감정 분석 결과</h2>
+          {biSentiResult == null ? (
+            <p>분석 중...</p>
+          ) : (
+            <>
+              <div class="w-full bg-red-600 rounded-full h-2.5 dark:bg-red-700">
+                <div class="bg-blue-600 h-2.5 rounded-full" style={{ width: `${biSentiResult * 100}%` }}></div>
               </div>
-              <div className="w-full bg-gray-300 rounded-full h-6">
-                <div
-                  className="bg-purple-600 h-6 rounded-full"
-                  style={{ width: `${Math.min(Math.max(biSentiResult * 100, 0), 100)}%` }}
-                ></div>
+              <div class="flex justify-between mb-1">
+                <span class="text-base font-medium text-blue-700 dark:text-blue">Positive</span>
+                <span class="text-base font-medium text-red-700 dark:text-red">Negative</span>
               </div>
-            </div>
-          )
-        )}
+
+              <p>{(biSentiResult * 100).toFixed(2)}%</p>
+            </>
+          )}
+        </div>
+
 
         {generatedText === '명언 생성 중...' ? (
           <div className="bg-pink-50 p-4 rounded-lg mb-6 text-pink-700 shadow-sm text-lg font-medium">
@@ -150,7 +153,7 @@ const EmotionResultPage = () => {
             onClick={handleDownloadAsImage}
             className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-md"
           >
-            다운받기
+            다운로드
           </button>
         </div>
       </div>
