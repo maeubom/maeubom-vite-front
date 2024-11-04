@@ -146,16 +146,17 @@ const EmotionResultPage = () => {
         {generatedText && (
           <div className="bg-pink-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
             <h2 className="text-lg font-semibold mb-2 text-pink-800">추천 명언</h2>
-            {generatedText.includes(' - ') ? (
+            {generatedText.includes('-') ? (
               <>
-                <p className="text-lg font-medium mb-2">{generatedText.split(' - ')[0].trim()}</p>
-                <p className="text-base font-semibold text-pink-700">- {generatedText.split(' - ')[1].trim()}</p>
+                <p className="text-base font-medium mb-2">{generatedText.split('-')[0].trim()}</p>
+                <p className="text-base font-semibold text-gray-700">- {generatedText.split('-')[1].trim()}</p>
               </>
             ) : (
-              <p className="text-lg font-medium">{generatedText}</p>
+              <p className="text-base font-medium">{generatedText}</p>
             )}
           </div>
         )}
+
 
         {/* 이미지 생성 중 로딩 표시 */}
         {isLoadingImage ? (
