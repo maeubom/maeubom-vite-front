@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { analyzeVideoEmotion, transcribeAudio, createText, generateImage, getBiSentiment } from '../API';
+import html2canvas from 'html2canvas';
+import loadingImage from '../assets/loading.svg'; // 로딩 이미지를 import
 
 const EmotionResultPage = () => {
   const location = useLocation();
+  const resultRef = useRef(null); // 캡처할 컴포넌트를 참조하기 위한 Ref
   const [recordedAudio, setRecordedAudio] = useState(null);
   const [recordedVideo, setRecordedVideo] = useState(null);
 
@@ -13,6 +16,8 @@ const EmotionResultPage = () => {
   const [generatedText, setGeneratedText] = useState('명언 생성 중...');
   const [imageURL, setImageURL] = useState(null);
 
+  const [isLoadingImage, setIsLoadingImage] = useState(false); // 이미지 생성 로딩 상태 추가
+
   useEffect(() => {
     if (location.state) {
       const { recordedAudio, recordedVideo } = location.state;
@@ -21,30 +26,28 @@ const EmotionResultPage = () => {
 
       const fetchData = async () => {
         try {
-          // 감정 분석 API 호출
           const videoResult = await analyzeVideoEmotion(recordedVideo);
           const mostCommonEmotion = videoResult?.most_common_emotion || '감정 분석 결과가 없습니다.';
           setAnalysisResult(mostCommonEmotion);
 
-          // 음성 to 텍스트 API 호출
           const audioResponse = await transcribeAudio(recordedAudio);
           const audioToText = audioResponse?.text || '음성 인식 결과가 없습니다.';
           setAudioResult(audioToText);
 
-          // 텍스트 감정분석 API 호출
           const textSentiResult = await getBiSentiment(audioToText);
           setBiSentiResult(textSentiResult?.score || '텍스트 감정 분석 결과가 없습니다.');
 
-          // 텍스트 to 이미지 API 호출
+          setIsLoadingImage(true); // 이미지 생성 시작 시 로딩 상태 true로 설정
           const imageResult = await generateImage(mostCommonEmotion);
-          setImageURL(imageResult); // 감정 기반 이미지 생성 결과 (Blob URL 설정)
+          setImageURL(imageResult);
+          setIsLoadingImage(false); // 이미지 생성 완료 후 로딩 상태 false로 설정
 
-          // 명언 API 호출
           const wiseSayingResponse = await createText(mostCommonEmotion);
           setGeneratedText(wiseSayingResponse?.quote || '명언 생성에 실패했습니다.');
 
         } catch (error) {
           console.error('Error fetching data:', error);
+          setIsLoadingImage(false); // 에러 발생 시에도 로딩 상태를 false로 설정
         }
       };
 
@@ -52,54 +55,77 @@ const EmotionResultPage = () => {
     }
   }, [location.state]);
 
+  // 분석 결과를 이미지로 다운로드하는 함수
+  const handleDownloadAsImage = () => {
+    if (resultRef.current) {
+      html2canvas(resultRef.current).then((canvas) => {
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = 'emotion_analysis_result.png';
+        link.click();
+      });
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center justify-start min-h-screen bg-gray-100 p-6">
-      {/* 상단에 정렬된 중앙 이미지 */}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-6">
       <div className="flex justify-center mb-8">
         <img src="/image/emotion.png" alt="Emotion Icon" className="w-24 h-24" />
       </div>
   
-      {/* 감정 분석 카드 */}
-      <div className="bg-white shadow-lg rounded-lg p-6 max-w-md w-full text-center">
-        {/* 감정 분석 결과 */}
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">{analysisResult}</h1>
+      <div
+        ref={resultRef} // 이 부분을 캡처합니다
+        className="bg-white shadow-xl rounded-lg p-8 max-w-lg w-full text-center transform transition duration-300 hover:scale-105"
+      >
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">{analysisResult}</h1>
 
-        {/* 변환된 텍스트 */}
         {audioResult && (
-          <div className="bg-gray-100 p-4 rounded-lg mb-4 text-gray-700">
-            <h2 className="text-lg font-semibold mb-2">{audioResult}</h2>
-            {/* <p>{audioResult}</p> */}
+          <div className="bg-indigo-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
+            <h2 className="text-lg font-semibold mb-2 text-indigo-800">음성 인식 결과</h2>
+            <p>{audioResult}</p>
           </div>
         )}
 
-        {/* 텍스트 감정 분석 결과 */}
         {biSentiResult && (
-          <div className="bg-gray-100 p-4 rounded-lg mb-4 text-gray-700">
-            <h2 className="text-lg font-semibold mb-2">{biSentiResult}</h2>
-            {/* <p>{biSentiResult}</p> */}
+          <div className="bg-purple-50 p-4 rounded-lg mb-6 text-gray-700 shadow-sm">
+            <h2 className="text-lg font-semibold mb-2 text-purple-800">텍스트 감정 분석 결과</h2>
+            <p>{biSentiResult}</p>
           </div>
         )}
 
-        {/* 명언 텍스트 */}
         {generatedText && (
-          <p className="text-gray-600 text-lg mb-4">{generatedText}</p>
+          <p className="bg-pink-50 p-4 rounded-lg mb-6 text-pink-700 shadow-sm text-lg font-medium">{generatedText}</p>
         )}
         
-        {/* 생성된 이미지 */}
-        {imageURL && (
-          <img 
-            src={imageURL} 
-            alt="Generated Result" 
-            className="w-full h-40 object-cover rounded-lg mb-4" 
-          />
+        {/* 이미지 생성 중 로딩 표시 */}
+        {isLoadingImage ? (
+          <div className="flex justify-center items-center mb-6">
+            <img src={loadingImage} alt="Loading" className="w-24 h-24" />
+          </div>
+        ) : (
+          imageURL && (
+            <img 
+              src={imageURL} 
+              alt="Generated Result" 
+              className="w-full h-64 object-contain rounded-lg mb-6 shadow-lg border border-gray-200"
+            />
+          )
         )}
 
-        <button 
-          onClick={() => window.history.back()} 
-          className="mt-4 px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors duration-200"
-        >
-          돌아가기
-        </button>
+        <div className="flex justify-center space-x-8 mt-6">
+          <button 
+            onClick={() => window.history.back()} 
+            className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors duration-200 shadow-md"
+          >
+            돌아가기
+          </button>
+          <button 
+            onClick={handleDownloadAsImage} 
+            className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-md"
+          >
+            다운받기
+          </button>
+        </div>
       </div>
     </div>
   );
